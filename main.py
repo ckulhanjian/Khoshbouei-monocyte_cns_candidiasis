@@ -134,50 +134,6 @@ def load(fungal_file, immune_file):
 
     return merged
 
-def corr_brain_region(fungal_volumes):
-    data = fungal_volumes
-    # for each animal × region, average over everything else (genotype, condition, batch)
-    avg_3 = data.groupby(['Mori', 'brain_region'])['volume'].mean().reset_index()
-    # pivot so brain regions become columns
-    corr1 = avg_3.pivot(index='Mori', columns='brain_region', values='volume')
-
-    # for each genotype × condition × region, average over everything else (animals, batch)
-    avg_6 = data.groupby(['genotype', 'immune_cell', 'brain_region'])['volume'].mean().reset_index()
-    # pivot so brain regions become columns
-    corr2 = avg_6.pivot_table(index=['genotype', 'immune_cell'], columns='brain_region', values='volume')
-
-    '''
-    Whatever you put in groupby() gets kept
-    Whatever you leave out gets averaged over'''
-
-    # Compute correlation matrix
-    matrix1 = corr1.corr(numeric_only=True)
-    matrix2 = corr2.corr(numeric_only=True)
-
-    # Figure 1
-    fig1, ax1 = plt.subplots(figsize=(8, 6))
-    sns.heatmap(matrix1, cmap="Blues", annot=True, ax=ax1)
-    ax1.set_xticklabels(ax1.get_xticklabels(), rotation=45, ha='right', fontsize=9)
-    ax1.set_yticklabels(ax1.get_yticklabels(), rotation=0, fontsize=9)
-    ax1.set_title("Average animal × region")
-    ax1.set_xlabel("Brain Region")
-    ax1.set_ylabel("Brain Region")
-    plt.tight_layout()
-    fig1.savefig("plots/per_animal.png", bbox_inches='tight')
-    plt.show()
-
-    # Figure 2
-    fig2, ax2 = plt.subplots(figsize=(8, 6))
-    sns.heatmap(matrix2, cmap="Blues", annot=True, ax=ax2)
-    ax2.set_xticklabels(ax2.get_xticklabels(), rotation=45, ha='right', fontsize=9)
-    ax2.set_yticklabels(ax2.get_yticklabels(), rotation=0, fontsize=9)
-    ax2.set_title("Average genotype × region")
-    ax2.set_xlabel("Brain Region")
-    ax2.set_ylabel("Brain Region")
-    plt.tight_layout()
-    fig2.savefig("plots/per_genotype.png", bbox_inches='tight')
-    plt.show()
-
 def spearman(x, y):
     """Returns (rho, p) or (nan, nan) if fewer than 3 points."""
     if len(x) < 3:
@@ -249,34 +205,6 @@ def plot_heatmap(region_data, region, save=True):
         plt.close(fig)
         print(f"  Saved: {fname}")
     return fig
-
-# correlation bar graphs (left right corr)
-# def plot_bars(region_data, region, save=True):
-#     fig, axes = plt.subplots(1, 2, figsize=(10, 4))
-
-#     for ax, geno in zip(axes, ["WT", "KO"]):
-#         sub = region_data[region_data["genotype"] == geno]
-        
-#         rho_vals = []
-#         for cell in CELL_TYPES:
-#             s = sub[sub["immune_cell"] == cell]
-#             # spearman coorelation
-#             rho, p = stats.spearmanr(s["volume"], s["immune_count"])
-#             rho_vals.append(rho)
-        
-#         ax.barh(CELL_TYPES, rho_vals)
-#         ax.axvline(0, color="black", linewidth=0.8)  # vertical line at 0
-#         ax.set_xlim(-1, 1)
-#         ax.set_title(geno)
-#         ax.set_xlabel("Spearman rho")
-
-#     plt.tight_layout()
-#     if save:
-#         fname = f"plots/bars/{region.replace('/', '_')}_barplot.png"
-#         fig.savefig(fname, bbox_inches="tight")
-#         plt.close(fig)
-#       # print(f"  Saved: {fname}")
-#     plt.show()
 
 # style scatter
 def style_scatter_ax(ax, cell, area):
@@ -464,9 +392,8 @@ def main():
         print(f"Plotting: {region}")
         region_data = data[data["brain_region"] == region]
         # plot_heatmap(region_data, region)
-        # plot_bars(region_data, region)
-        # plot_scatter(region_data, region, inner=True)   # Inner plot
-        # plot_scatter(region_data, region, inner=True)  # Outer plot
+        plot_scatter(region_data, region, inner=True)   # Inner plot
+        plot_scatter(region_data, region, inner=True)  # Outer plot
 
 if __name__== "__main__":
     main()
