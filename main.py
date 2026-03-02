@@ -140,6 +140,11 @@ def spearman(x, y):
         return np.nan, np.nan
     return stats.spearmanr(x, y)
 
+def pearson(x,y):
+    if len(x) < 3:
+        return np.nan, np.nan
+    return stats.pearsonr(x, y)
+
 def sig_stars(p):
     """Convert p-value to significance stars string."""
     if pd.isna(p):
@@ -153,11 +158,11 @@ def sig_stars(p):
 def plot_heatmap(region_data, region, save=True):
     """
     Single heatmap figure with WT (left) and KO (right) panels.
-    Each cell = Spearman ρ between fungal volume and immune count.
+    Each cell = Pearson ρ between fungal volume and immune count.
     Yellow * = p < 0.05.
     """
     fig, axes = plt.subplots(1, 2, figsize=(12, 3.5))
-    fig.suptitle(f"{region} — Spearman ρ Heatmap\n(fungal volume vs immune count)",
+    fig.suptitle(f"{region} — Pearson ρ Heatmap\n(fungal volume vs immune count)",
                 fontsize=12, fontweight="bold", y=1.05)
 
     for ax, geno in zip(axes, GENOTYPES):
@@ -167,7 +172,7 @@ def plot_heatmap(region_data, region, save=True):
         rho_vals, pval_vals = [], []
         for cell in CELL_TYPES:
             s = sub[sub["immune_cell"] == cell]
-            rho, p = spearman(s["volume"].values, s["immune_count"].values)
+            rho, p = pearson(s["volume"].values, s["immune_count"].values)
             rho_vals.append(rho)
             pval_vals.append(p)
 
@@ -263,7 +268,7 @@ def plot_scatter(region_data, region, save=True, inner=True):
                 ax.plot(x_line, m * x_line + b, color=color,
                         linewidth=1.5, linestyle="--", alpha=0.9)
 
-                rho, p = spearman(sub["volume"].values, sub["immune_count"].values)
+                rho, p = pearson(sub["volume"].values, sub["immune_count"].values)
                 stars = sig_stars(p)
                 rho_lines.append((label, color, rho, stars))  # save for below
 
@@ -305,13 +310,13 @@ def heatmap(data, save=True):
 
     wt_corr = (
         wt.groupby(["brain_region", "immune_cell"])[["volume", "immune_count"]]
-          .apply(lambda x: x["volume"].corr(x["immune_count"], method="spearman"))
+          .apply(lambda x: x["volume"].corr(x["immune_count"], method="pearson"))
           .unstack()
     )
 
     ko_corr = (
         ko.groupby(["brain_region", "immune_cell"])[["volume", "immune_count"]]
-          .apply(lambda x: x["volume"].corr(x["immune_count"], method="spearman"))
+          .apply(lambda x: x["volume"].corr(x["immune_count"], method="pearson"))
           .unstack()
     )
 
@@ -328,7 +333,7 @@ def heatmap_style(wt_corr, ko_corr, save=True):
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 7))
     fig.patch.set_facecolor("white")
-    fig.suptitle("Spearman ρ: Fungal Volume (μm³) vs Immune Cell Count",
+    fig.suptitle("Pearson ρ: Fungal Volume (μm³) vs Immune Cell Count",
                  fontsize=15, fontweight="bold",
                  fontfamily=FONT, color="black", y=0.98)
 
@@ -345,7 +350,7 @@ def heatmap_style(wt_corr, ko_corr, save=True):
             annot_kws={"size": 10, "weight": "normal",
                        "color": "#444444", "family": FONT},
             linewidths=0.6, linecolor="#eeeeee",
-            cbar_kws={"label": "Spearman's ρ", "shrink": 0.8}
+            cbar_kws={"label": "Pearson's ρ", "shrink": 0.8}
         )
 
         # colorbar
@@ -393,7 +398,7 @@ def main():
         region_data = data[data["brain_region"] == region]
         # plot_heatmap(region_data, region)
         plot_scatter(region_data, region, inner=True)   # Inner plot
-        plot_scatter(region_data, region, inner=True)  # Outer plot
+        plot_scatter(region_data, region, inner=False)  # Outer plot
 
 if __name__== "__main__":
     main()
