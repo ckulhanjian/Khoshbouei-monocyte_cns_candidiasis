@@ -304,7 +304,11 @@ def plot_scatter(region_data, region, save=True, inner=True):
     return fig
 
 # total heatmap
-def heatmap(data, save=True):
+def heatmap(data, save=True, inner=True):
+    distance = "Inner" if inner == True else "Outer"
+    if inner:
+        data = data[data["brain_area"] == distance]
+
     wt = data[data["genotype"] == "WT"]
     ko = data[data["genotype"] == "KO"]
 
@@ -320,10 +324,10 @@ def heatmap(data, save=True):
           .unstack()
     )
 
-    heatmap_style(wt_corr, ko_corr, save)
+    heatmap_style(wt_corr, ko_corr, save, distance)
 
 # style heatmap
-def heatmap_style(wt_corr, ko_corr, save=True):
+def heatmap_style(wt_corr, ko_corr, save=True, distance="Inner"):
     # color palette
     cmap = sns.diverging_palette(
         222, 21,          # hue: 0=grey-ish, 30=orange
@@ -333,7 +337,7 @@ def heatmap_style(wt_corr, ko_corr, save=True):
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 7))
     fig.patch.set_facecolor("white")
-    fig.suptitle("Pearson ρ: Fungal Volume (μm³) vs Immune Cell Count",
+    fig.suptitle(f"Pearson ρ: Fungal Volume (μm³) vs Immune Cell Count ({distance})",
                  fontsize=15, fontweight="bold",
                  fontfamily=FONT, color="black", y=0.98)
 
@@ -376,7 +380,8 @@ def heatmap_style(wt_corr, ko_corr, save=True):
         
     plt.tight_layout()
     if save:
-        fname = f"plots/heatmaps/all_regions.png"
+        print(f"Saving heatmap_{distance}...")
+        fname = f"plots/heatmaps/all_regions_{distance}.png"
         os.makedirs(os.path.dirname(fname), exist_ok=True)
         fig.savefig(fname, dpi=300, bbox_inches="tight", facecolor="white")
         plt.close(fig)
@@ -389,7 +394,8 @@ def main():
     data = load(fungal_file, immune_file)
     
     # 1. plot heatmap
-    heatmap(data)
+    heatmap(data, inner=True)
+    heatmap(data, inner=False)
     
     # 2. correlation plots
     regions = sorted(data["brain_region"].unique())
