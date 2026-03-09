@@ -162,7 +162,7 @@ def plot_heatmap(region_data, region, save=True):
     Yellow * = p < 0.05.
     """
     fig, axes = plt.subplots(1, 2, figsize=(12, 3.5))
-    fig.suptitle(f"{region} — Pearson ρ Heatmap\n(fungal volume vs immune count)",
+    fig.suptitle(f"{region} — Pearson r Heatmap\n(fungal volume vs immune count)",
                 fontsize=12, fontweight="bold", y=1.05)
 
     for ax, geno in zip(axes, GENOTYPES):
@@ -297,9 +297,9 @@ def plot_scatter(region_data, region, save=True, inner=True):
     plt.subplots_adjust(bottom=0.18)  # make room for legend and rho below
 
     if save:
-        fname = f"plots/scatters/{area}/{region.replace('/', '_')}_scatterplot.png"
+        fname = f"plots/scatters/{area}/{region.replace('/', '_')}_scatterplot.wmf"
         os.makedirs(os.path.dirname(fname), exist_ok=True)
-        fig.savefig(fname, dpi=300, bbox_inches="tight", facecolor="white")
+        fig.savefig(fname, dpi=300, bbox_inches="tight", facecolor="white", format='wmf')
         plt.close(fig)
     return fig
 
@@ -337,7 +337,7 @@ def heatmap_style(wt_corr, ko_corr, save=True, distance="Inner"):
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 7))
     fig.patch.set_facecolor("white")
-    fig.suptitle(f"Pearson ρ: Fungal Volume (μm³) vs Immune Cell Count ({distance})",
+    fig.suptitle(f"Pearson rho: Fungal Volume (μm³) vs Immune Cell Count ({distance})",
                  fontsize=15, fontweight="bold",
                  fontfamily=FONT, color="black", y=0.98)
 
@@ -381,9 +381,9 @@ def heatmap_style(wt_corr, ko_corr, save=True, distance="Inner"):
     plt.tight_layout()
     if save:
         print(f"Saving heatmap_{distance}...")
-        fname = f"plots/heatmaps/all_regions_{distance}.png"
+        fname = f"plots/heatmaps/all_regions_{distance}.wmf"
         os.makedirs(os.path.dirname(fname), exist_ok=True)
-        fig.savefig(fname, dpi=300, bbox_inches="tight", facecolor="white")
+        fig.savefig(fname, dpi=300, bbox_inches="tight", facecolor="white", format='wmf')
         plt.close(fig)
     return fig
 
