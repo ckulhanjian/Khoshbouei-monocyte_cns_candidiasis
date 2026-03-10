@@ -297,9 +297,9 @@ def plot_scatter(region_data, region, save=True, inner=True):
     plt.subplots_adjust(bottom=0.18)  # make room for legend and rho below
 
     if save:
-        fname = f"plots/scatters/{area}/{region.replace('/', '_')}_scatterplot.wmf"
+        fname = f"plots/scatters/{area}/{region.replace('/', '_')}_scatterplot.svg"
         os.makedirs(os.path.dirname(fname), exist_ok=True)
-        fig.savefig(fname, dpi=300, bbox_inches="tight", facecolor="white", format='wmf')
+        fig.savefig(fname, dpi=300, bbox_inches="tight", facecolor="white", format='svg')
         plt.close(fig)
     return fig
 
@@ -381,9 +381,9 @@ def heatmap_style(wt_corr, ko_corr, save=True, distance="Inner"):
     plt.tight_layout()
     if save:
         print(f"Saving heatmap_{distance}...")
-        fname = f"plots/heatmaps/all_regions_{distance}.wmf"
+        fname = f"plots/heatmaps/all_regions_{distance}.svg"
         os.makedirs(os.path.dirname(fname), exist_ok=True)
-        fig.savefig(fname, dpi=300, bbox_inches="tight", facecolor="white", format='wmf')
+        fig.savefig(fname, dpi=300, bbox_inches="tight", facecolor="white", format='svg')
         plt.close(fig)
     return fig
 
