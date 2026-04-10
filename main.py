@@ -31,9 +31,9 @@ GENO_COLORS = {"WT": CONTROL_COLOR, "KO": MONOCYTE_COLOR}
 GENO_LABELS = {"WT": "Control", "KO": "Monocyte Depleted"}
 
 # units
-FUNGAL_UNIT = "Fungal Volume (μm³)"
-IMMUNE_UNIT_INNER = "Cell Density (cells/100 μm circle)"
-IMMUNE_UNIT_OUTER = "Cell Density (cells/200 μm circle)"
+FUNGAL_UNIT = "Fungal Volume (mm³)"
+IMMUNE_UNIT_INNER = "Cell Density (1000 cells/100 μm circle)"
+IMMUNE_UNIT_OUTER = "Cell Density (1000 cells/200 μm circle)"
 
 def make_dir():
     os.makedirs("tables", exist_ok=True)
@@ -176,7 +176,7 @@ def plot_heatmap(region_data, region, save=True):
             rho_vals.append(rho)
             pval_vals.append(p)
 
-        rho_df = pd.DataFrame([rho_vals], columns=CELL_TYPES, index=["ρ"])
+        rho_df = pd.DataFrame([rho_vals], columns=CELL_TYPES, index=["r^2"])
 
         sns.heatmap(
             rho_df.astype(float), ax=ax,
@@ -185,7 +185,7 @@ def plot_heatmap(region_data, region, save=True):
             annot=True, fmt=".2f",
             annot_kws={"size": 12, "weight": "bold"},
             linewidths=1, linecolor="#2a2a4a",
-            cbar_kws={"shrink": 0.8, "label": "ρ"},
+            cbar_kws={"shrink": 0.8, "label": "r^2"},
         )
 
         # Mark significant cells
@@ -255,6 +255,10 @@ def plot_scatter(region_data, region, save=True, inner=True):
                 (region_data["immune_cell"] == cell)
             ].dropna(subset=["volume", "immune_count"])
 
+            # Scale both axes by /1000
+            sub["volume"] /= 1000
+            sub["immune_count"] /= 1000
+
             color = GENO_COLORS[geno]
             label = GENO_LABELS[geno]
 
@@ -276,7 +280,7 @@ def plot_scatter(region_data, region, save=True, inner=True):
 
         # ρ annotations below x-axis label
         for i, (label, color, rho, stars) in enumerate(rho_lines):
-            ax.annotate(f"{label}: ρ={rho:.2f} {stars}",
+            ax.annotate(f"{label}: r²={rho:.2f} {stars}",
                         xy=(0.5, -0.18 - i * 0.05),   # stacked below x label
                         xycoords="axes fraction",
                         ha="center", va="top",
@@ -337,14 +341,14 @@ def heatmap_style(wt_corr, ko_corr, save=True, distance="Inner"):
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 7))
     fig.patch.set_facecolor("white")
-    fig.suptitle(f"Pearson rho: Fungal Volume (μm³) vs Immune Cell Count ({distance})",
+    fig.suptitle(f"Pearson r²: Fungal Volume (μm³) vs Immune Cell Count ({distance})",
                  fontsize=15, fontweight="bold",
                  fontfamily=FONT, color="black", y=0.98)
 
     for ax, matrix, title in zip(
         [ax1, ax2],
         [wt_corr, ko_corr],
-        ["Control", "Monocyte Depleted"]
+        ["", ""]
     ):
         sns.heatmap(
             matrix, ax=ax,
@@ -394,8 +398,8 @@ def main():
     data = load(fungal_file, immune_file)
     
     # 1. plot heatmap
-    heatmap(data, inner=True)
-    heatmap(data, inner=False)
+    # heatmap(data, inner=True)
+    # heatmap(data, inner=False)
     
     # 2. correlation plots
     regions = sorted(data["brain_region"].unique())
