@@ -9,32 +9,25 @@ from statsmodels.formula.api import ols
 from scipy.stats import mannwhitneyu
 from scipy import stats
 
-# metadata info about data (columns and labels)
-metadata = {
-    "cols" : [],
-    "regions": [],
-    "conditions": ['Microglia', 'Neutrophils', 'Macrophages'],
-    "genotypes": ['WT', 'KO']
-}
-
+# METADATA
 CELL_TYPES  = ["Microglia", "Neutrophils", "Macrophages"]
 GENOTYPES   = ["WT", "KO"]
 GENO_COLORS = {"WT": "blue", "KO": "orange"}
 ANIMAL_MARKERS = {1: "o", 2: "s", 3: "^"}
 
-# STYLE CONFIG
+# STYLE 
 FONT        = "Arial"
 CONTROL_COLOR = "#808080"   # grey — Control (WT)
-MONOCYTE_COLOR = "#fd810a"  # orange — Monocyte Depleted (KO)
-
+MONOCYTE_COLOR = "#fd810a"  # orange — Monocyte De
 GENO_COLORS = {"WT": CONTROL_COLOR, "KO": MONOCYTE_COLOR}
 GENO_LABELS = {"WT": "Control", "KO": "Monocyte Depleted"}
 
-# units
+# UNITS
 FUNGAL_UNIT = "Fungal Volume (mm³)"
 IMMUNE_UNIT_INNER = "Cell Density (1000 cells/100 μm circle)"
 IMMUNE_UNIT_OUTER = "Cell Density (1000 cells/200 μm circle)"
 
+# make directories if they don't exist
 def make_dir():
     os.makedirs("tables", exist_ok=True)
     os.makedirs("plots", exist_ok=True)
@@ -42,6 +35,7 @@ def make_dir():
     os.makedirs("plots/heatmaps", exist_ok=True)
     os.makedirs("plots/scatters", exist_ok=True)
 
+# read excel file
 def read_file(filename):
     try:
         df = pd.read_excel(filename)
@@ -49,51 +43,13 @@ def read_file(filename):
         print("Error reading excel file.")
     return df
 
-def plot_heatmap(wt_matrix, ko_matrix):
-    # rescale
-    SCALE = 1e-3
-    wt_matrix = wt_matrix * SCALE
-    ko_matrix = ko_matrix * SCALE
-
-    vmin = min(wt_matrix.min().min(), ko_matrix.min().min())
-    vmax = max(wt_matrix.max().max(), ko_matrix.max().max())
-
-    fig, axes = plt.subplots(
-        1, 2,
-        figsize=(12, 4),   # smaller overall
-        constrained_layout=True
-    )
-
-    sns.heatmap(
-        wt_matrix,
-        cmap="Blues",
-        vmin=vmin,
-        vmax=vmax,
-        annot=True,
-        ax=axes[0],
-        cbar_kws={"label": "Volume (×e^-3)"}
-    )
-    axes[0].set_title("WT - Mean Volume", fontweight="bold")
-    axes[0].set_xlabel("Immune Cell", fontweight="bold")
-    axes[0].set_ylabel("Brain Region", fontweight="bold")
-
-    sns.heatmap(
-        ko_matrix,
-        cmap="Blues",
-        vmin=vmin,
-        vmax=vmax,
-        annot=True,
-        ax=axes[1],
-        cbar_kws={"label": "Volume (×e^-3)"}
-    )
-    axes[1].set_title("KO - Mean Volume", fontweight="bold")
-    axes[1].set_xlabel("Immune Cell", fontweight="bold")
-    axes[1].set_ylabel("Brain Region", fontweight="bold")
-
-    output_path = "plots/vol_heatmaps_WT_KO.png"
-    plt.savefig(output_path, dpi=300, bbox_inches="tight")
-    plt.show()
-
+'''
+load, clean and merge fungal and immune data into a single dataframe for analysis
+- read both files
+- clean immune counts (remove commas, convert to numeric)
+- reshape immune data from wide to long format (1 row per brain region + immune cell type
+- merge fungal and immune data on common keys
+'''
 def load(fungal_file, immune_file):
     fungal = read_file(fungal_file)
     immune = read_file(immune_file)
@@ -240,14 +196,14 @@ def plot_scatter(region_data, region, save=True, inner=True):
     area = "Inner" if inner else "Outer"
     region_data = region_data[region_data["brain_area"] == area].copy()
 
-    fig, axes = plt.subplots(1, 3, figsize=(13, 5))  # taller to fit legend below
+    fig, axes = plt.subplots(1, 3, figsize=(13, 5))
     fig.patch.set_facecolor("white")
     fig.suptitle(f"{region} — {area}",
                  fontsize=12, fontweight="bold",
                  fontfamily=FONT, color="black", y=1.01)
 
     for ax, cell in zip(axes, CELL_TYPES):
-        rho_lines = []  # collect rho annotations to put below plot
+        r2_annotations = {}
 
         for geno in GENOTYPES:
             sub = region_data[
@@ -255,7 +211,7 @@ def plot_scatter(region_data, region, save=True, inner=True):
                 (region_data["immune_cell"] == cell)
             ].dropna(subset=["volume", "immune_count"])
 
-            # Scale both axes by /1000
+            sub = sub.copy()
             sub["volume"] /= 1000
             sub["immune_count"] /= 1000
 
@@ -270,35 +226,33 @@ def plot_scatter(region_data, region, save=True, inner=True):
                 m, b = np.polyfit(sub["volume"], sub["immune_count"], 1)
                 x_line = np.linspace(sub["volume"].min(), sub["volume"].max(), 100)
                 ax.plot(x_line, m * x_line + b, color=color,
-                        linewidth=1.5, linestyle="--", alpha=0.9)
+                        linewidth=1.5, linestyle="-", alpha=0.9)  # solid line
 
                 rho, p = pearson(sub["volume"].values, sub["immune_count"].values)
-                stars = sig_stars(p)
-                rho_lines.append((label, color, rho, stars))  # save for below
+                r2_annotations[geno] = (rho ** 2, sig_stars(p))
 
         style_scatter_ax(ax, cell, area)
 
-        # ρ annotations below x-axis label
-        for i, (label, color, rho, stars) in enumerate(rho_lines):
-            ax.annotate(f"{label}: r²={rho:.2f} {stars}",
-                        xy=(0.5, -0.18 - i * 0.05),   # stacked below x label
-                        xycoords="axes fraction",
-                        ha="center", va="top",
-                        color=color, fontsize=7.5,
-                        fontfamily=FONT, fontweight="bold")
+        wt_r2, wt_stars = r2_annotations.get("WT", (float("nan"), ""))
+        ko_r2, ko_stars = r2_annotations.get("KO", (float("nan"), ""))
 
-    # legend centered below all 3 panels
-    handles, labels = axes[0].get_legend_handles_labels()
-    fig.legend(handles, labels,
-               loc="lower center",
-               ncol=2,
-               fontsize=9,
-               frameon=False,
-               bbox_to_anchor=(0.5, -0.08),
-               prop={"family": FONT})
+        wt_text = f"r²={wt_r2:.2f} {wt_stars}".strip()
+        ko_text = f"r²={ko_r2:.2f} {ko_stars}".strip()
+
+        # Both centered, WT slightly left of center, KO slightly right
+        ax.text(0.35, .98, wt_text,
+                transform=ax.transAxes,
+                ha="right", va="bottom",
+                color=GENO_COLORS["WT"],
+                fontsize=9, fontweight="bold", fontfamily=FONT)
+
+        ax.text(0.65, .98, ko_text,
+                transform=ax.transAxes,
+                ha="left", va="bottom",
+                color=GENO_COLORS["KO"],
+                fontsize=9, fontweight="bold", fontfamily=FONT)
 
     plt.tight_layout()
-    plt.subplots_adjust(bottom=0.18)  # make room for legend and rho below
 
     if save:
         fname = f"plots/scatters/{area}/{region.replace('/', '_')}_scatterplot.svg"
@@ -328,6 +282,9 @@ def heatmap(data, save=True, inner=True):
           .unstack()
     )
 
+    # wt_corr **= 2  # convert to r²
+    # ko_corr **= 2  # convert to r²
+
     heatmap_style(wt_corr, ko_corr, save, distance)
 
 # style heatmap
@@ -341,7 +298,7 @@ def heatmap_style(wt_corr, ko_corr, save=True, distance="Inner"):
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 7))
     fig.patch.set_facecolor("white")
-    fig.suptitle(f"Pearson r²: Fungal Volume (μm³) vs Immune Cell Count ({distance})",
+    fig.suptitle(f"Pearson r: Fungal Volume (μm³) vs Immune Cell Count ({distance})",
                  fontsize=15, fontweight="bold",
                  fontfamily=FONT, color="black", y=0.98)
 
@@ -385,7 +342,7 @@ def heatmap_style(wt_corr, ko_corr, save=True, distance="Inner"):
     plt.tight_layout()
     if save:
         print(f"Saving heatmap_{distance}...")
-        fname = f"plots/heatmaps/all_regions_{distance}.svg"
+        fname = f"plots/heatmaps/heatmap_{distance}.svg"
         os.makedirs(os.path.dirname(fname), exist_ok=True)
         fig.savefig(fname, dpi=300, bbox_inches="tight", facecolor="white", format='svg')
         plt.close(fig)
@@ -398,8 +355,8 @@ def main():
     data = load(fungal_file, immune_file)
     
     # 1. plot heatmap
-    # heatmap(data, inner=True)
-    # heatmap(data, inner=False)
+    heatmap(data, inner=True)
+    heatmap(data, inner=False)
     
     # 2. correlation plots
     regions = sorted(data["brain_region"].unique())
