@@ -229,15 +229,15 @@ def plot_scatter(region_data, region, save=True, inner=True):
                         linewidth=1.5, linestyle="-", alpha=0.9)  # solid line
 
                 rho, p = pearson(sub["volume"].values, sub["immune_count"].values)
-                r2_annotations[geno] = (rho ** 2, sig_stars(p))
+                r2_annotations[geno] = (rho, sig_stars(p))
 
         style_scatter_ax(ax, cell, area)
 
         wt_r2, wt_stars = r2_annotations.get("WT", (float("nan"), ""))
         ko_r2, ko_stars = r2_annotations.get("KO", (float("nan"), ""))
 
-        wt_text = f"r²={wt_r2:.2f} {wt_stars}".strip()
-        ko_text = f"r²={ko_r2:.2f} {ko_stars}".strip()
+        wt_text = f"r={wt_r2:.2f} {wt_stars}".strip()
+        ko_text = f"r={ko_r2:.2f} {ko_stars}".strip()
 
         # Both centered, WT slightly left of center, KO slightly right
         ax.text(0.35, .98, wt_text,
@@ -264,8 +264,8 @@ def plot_scatter(region_data, region, save=True, inner=True):
 # total heatmap
 def heatmap(data, save=True, inner=True):
     distance = "Inner" if inner == True else "Outer"
-    if inner:
-        data = data[data["brain_area"] == distance]
+    
+    data = data[data["brain_area"] == distance]
 
     wt = data[data["genotype"] == "WT"]
     ko = data[data["genotype"] == "KO"]
@@ -275,7 +275,6 @@ def heatmap(data, save=True, inner=True):
           .apply(lambda x: x["volume"].corr(x["immune_count"], method="pearson"))
           .unstack()
     )
-
     ko_corr = (
         ko.groupby(["brain_region", "immune_cell"])[["volume", "immune_count"]]
           .apply(lambda x: x["volume"].corr(x["immune_count"], method="pearson"))
@@ -315,7 +314,7 @@ def heatmap_style(wt_corr, ko_corr, save=True, distance="Inner"):
             annot_kws={"size": 14, "weight": "normal",
                        "color": "#444444", "family": FONT},
             linewidths=0.6, linecolor="#eeeeee",
-            cbar_kws={"label": "Pearson's ρ", "shrink": 0.8}
+            cbar_kws={"label": "Pearson's r", "shrink": 0.8}
         )
 
         # colorbar
@@ -359,13 +358,13 @@ def main():
     heatmap(data, inner=False)
     
     # 2. correlation plots
-    # regions = sorted(data["brain_region"].unique())
-    # for region in regions:
-    #     print(f"Plotting: {region}")
-    #     region_data = data[data["brain_region"] == region]
-    #     # plot_heatmap(region_data, region)
-    #     plot_scatter(region_data, region, inner=True)   # Inner plot
-    #     plot_scatter(region_data, region, inner=False)  # Outer plot
+    regions = sorted(data["brain_region"].unique())
+    for region in regions:
+        print(f"Plotting: {region}")
+        region_data = data[data["brain_region"] == region]
+        # plot_heatmap(region_data, region)
+        plot_scatter(region_data, region, inner=True)   # Inner plot
+        plot_scatter(region_data, region, inner=False)  # Outer plot
 
 if __name__== "__main__":
     main()
