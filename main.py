@@ -312,7 +312,7 @@ def heatmap_style(wt_corr, ko_corr, save=True, distance="Inner"):
             cmap=cmap,
             vmin=-1, vmax=1,
             annot=True, fmt=".2f",
-            annot_kws={"size": 10, "weight": "normal",
+            annot_kws={"size": 14, "weight": "normal",
                        "color": "#444444", "family": FONT},
             linewidths=0.6, linecolor="#eeeeee",
             cbar_kws={"label": "Pearson's ρ", "shrink": 0.8}
@@ -359,13 +359,13 @@ def main():
     heatmap(data, inner=False)
     
     # 2. correlation plots
-    regions = sorted(data["brain_region"].unique())
-    for region in regions:
-        print(f"Plotting: {region}")
-        region_data = data[data["brain_region"] == region]
-        # plot_heatmap(region_data, region)
-        plot_scatter(region_data, region, inner=True)   # Inner plot
-        plot_scatter(region_data, region, inner=False)  # Outer plot
+    # regions = sorted(data["brain_region"].unique())
+    # for region in regions:
+    #     print(f"Plotting: {region}")
+    #     region_data = data[data["brain_region"] == region]
+    #     # plot_heatmap(region_data, region)
+    #     plot_scatter(region_data, region, inner=True)   # Inner plot
+    #     plot_scatter(region_data, region, inner=False)  # Outer plot
 
 if __name__== "__main__":
     main()
