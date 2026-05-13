@@ -10,7 +10,7 @@ from scipy.stats import mannwhitneyu
 from scipy import stats
 
 # METADATA
-CELL_TYPES  = ["Microglia", "Neutrophils", "Macrophages"]
+CELL_TYPES  = ["Macrophages","Microglia", "Neutrophils"]
 GENOTYPES   = ["WT", "KO"]
 GENO_COLORS = {"WT": "blue", "KO": "orange"}
 ANIMAL_MARKERS = {1: "o", 2: "s", 3: "^"}
