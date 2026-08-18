@@ -1,5 +1,5 @@
 
-# Circulating Monocytes Regulate Region - Specific Neuroimmune Defense During CNS Candidiasis
+# Neuroimmune Defense During CNS Candidiasis
 Researchers: Devon Borg and Sabrina Campos
 PI: Habibeh Khoshbouei
 Mentor: Leah Phan
